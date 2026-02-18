@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>GymLog</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1f1f1f;
+    --border: #2a2a2a;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #666;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 20px 20px 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .back-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+    transition: color 0.2s;
+  }
+
+  .back-btn:hover { color: var(--text); }
+  .back-btn svg { width: 16px; height: 16px; }
+
+  /* VIEWS */
+  .view { display: none; padding: 20px; }
+  .view.active { display: block; }
+
+  /* ROUTINES VIEW */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    margin-top: 24px;
+  }
+
+  .routines-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 80px;
+  }
+
+  .routine-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .routine-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.2s;
+    transform-origin: left;
+  }
+
+  .routine-card:hover { border-color: var(--accent); background: var(--surface2); }
+  .routine-card:hover::before { transform: scaleX(1); }
+
+  .routine-card-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .routine-card-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .routine-card-arrow {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    color: var(--muted);
+    font-size: 1.2rem;
+    transition: transform 0.2s, color 0.2s;
+  }
+
+  .routine-card:hover .routine-card-arrow { transform: translate(2px, -2px); color: var(--accent); }
+
+  .routine-card .delete-routine {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+    z-index: 2;
+  }
+
+  .routine-card:hover .delete-routine { opacity: 1; }
+  .delete-routine:hover { color: var(--accent2) !important; }
+
+  /* ADD BUTTON FLOATING */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 24px rgba(232,255,71,0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+    z-index: 200;
+  }
+
+  .fab:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(232,255,71,0.4); }
+  .fab:active { transform: scale(0.97); }
+
+  /* ROUTINE DETAIL VIEW */
+  .routine-header {
+    margin-bottom: 24px;
+  }
+
+  .routine-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .exercises-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 100px; }
+
+  .exercise-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .exercise-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .exercise-header:hover { background: var(--surface2); }
+
+  .exercise-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .exercise-summary {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .exercise-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+  }
+
+  .icon-btn:hover { color: var(--text); background: var(--border); }
+  .icon-btn.danger:hover { color: var(--accent2); }
+
+  .chevron {
+    transition: transform 0.2s;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .exercise-card.open .chevron { transform: rotate(180deg); }
+
+  .exercise-body {
+    display: none;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .exercise-card.open .exercise-body { display: block; }
+
+  /* PROGRESS TABLE */
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0 8px;
+  }
+
+  .progress-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .add-progress-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .add-progress-btn:hover { background: var(--border); }
+
+  .progress-entries { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+
+  .progress-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .progress-entry-date { color: var(--muted); font-size: 0.75rem; }
+
+  .progress-entry-weight {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .progress-entry-reps { color: var(--muted); font-size: 0.75rem; }
+
+  .delete-entry {
+    background: none;
+    border: none;
+    color: var(--border);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    transition: color 0.15s;
+  }
+
+  .delete-entry:hover { color: var(--accent2); }
+
+  .empty-msg {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 16px 0;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 500;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 28px 20px 36px;
+    width: 100%;
+    max-width: 480px;
+    animation: slideUp 0.25s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--muted); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  .btn-primary {
+    flex: 1;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-secondary:hover { background: var(--border); }
+
+  /* NO routines */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state-icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .empty-state p { font-size: 0.85rem; }
+
+  /* Best PR badge */
+  .pr-badge {
+    background: rgba(232,255,71,0.15);
+    color: var(--accent);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="back-btn" id="backBtn" onclick="showView('routines')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Rutinas
+  </button>
+  <div class="logo">GymLog</div>
+  <div style="width:80px"></div>
+</div>
+
+<!-- ROUTINES VIEW -->
+<div class="view active" id="view-routines">
+  <div class="section-title">MIS RUTINAS</div>
+  <div class="routines-grid" id="routinesGrid"></div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  <span id="fabLabel">Nueva Rutina</span>
+</button>
+
+<!-- ROUTINE DETAIL VIEW -->
+<div class="view" id="view-routine">
+  <div class="routine-header">
+    <div class="routine-title" id="routineTitle"></div>
+  </div>
+  <div class="exercises-list" id="exercisesList"></div>
+</div>
+
+<!-- MODAL: Nueva Rutina -->
+<div class="modal-overlay" id="modalRoutine">
+  <div class="modal">
+    <div class="modal-title">Nueva Rutina</div>
+    <div class="form-group">
+      <label class="form-label">Nombre de la rutina</label>
+      <input type="text" class="form-input" id="routineNameInput" placeholder="Ej: Pecho · Triceps · Hombro">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modalRoutine')">Cancelar</button>
+      <button class="btn-primary" onclick="addRoutine()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo Ejercicio -->
+<div class="modal-overlay" id="modalExercise">
+  <div class="modal">
+    <div class="modal-title">Nuevo Ejercicio</div>
+    <div class="form-group">
+      <label class="form-label">Nombre del ejercicio</label>
+      <input type="text" class="form-input" id="exerciseNameInput" placeholder="Ej: Press banca">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modalExercise')">Cancelar</button>
+      <button class="btn-primary" onclick="addExercise()">Añadir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Añadir Progreso -->
+<div class="modal-overlay" id="modalProgress">
+  <div class="modal">
+    <div class="modal-title">Registrar Progreso</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Peso (kg)</label>
+        <input type="number" class="form-input" id="progressWeightInput" placeholder="100" step="0.5" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Repeticiones</label>
+        <input type="number" class="form-input" id="progressRepsInput" placeholder="8" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Series</label>
+      <input type="number" class="form-input" id="progressSetsInput" placeholder="3" min="1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nota (opcional)</label>
+      <input type="text" class="form-input" id="progressNoteInput" placeholder="Ej: buena técnica">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modalProgress')">Cancelar</button>
+      <button class="btn-primary" onclick="addProgress()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+let db = JSON.parse(localStorage.getItem('gymlog') || '{"routines":[]}');
+let currentRoutineId = null;
+let currentExerciseId = null;
+let currentView = 'routines';
+
+function save() {
+  localStorage.setItem('gymlog', JSON.stringify(db));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+// ── VIEWS ──────────────────────────────────────────────────────────────
+function showView(view, routineId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  currentView = view;
+
+  const backBtn = document.getElementById('backBtn');
+  const fabLabel = document.getElementById('fabLabel');
+
+  if (view === 'routines') {
+    backBtn.style.display = 'none';
+    fabLabel.textContent = 'Nueva Rutina';
+    document.getElementById('fabBtn').onclick = () => openModal('modalRoutine');
+    renderRoutines();
+  } else if (view === 'routine') {
+    currentRoutineId = routineId;
+    backBtn.style.display = 'flex';
+    fabLabel.textContent = 'Ejercicio';
+    document.getElementById('fabBtn').onclick = () => openModal('modalExercise');
+    renderRoutineDetail();
+  }
+}
+
+// ── RENDER: ROUTINES ──────────────────────────────────────────────────
+function renderRoutines() {
+  const grid = document.getElementById('routinesGrid');
+  const { routines } = db;
+
+  if (!routines.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-state-icon">🏋️</div>
+      <h3>Sin rutinas aún</h3>
+      <p>Pulsa el botón para crear tu primera rutina</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = routines.map(r => {
+    const exCount = r.exercises ? r.exercises.length : 0;
+    return `<div class="routine-card" onclick="showView('routine','${r.id}')">
+      <button class="delete-routine" onclick="deleteRoutine(event,'${r.id}')">✕</button>
+      <div>
+        <div class="routine-card-name">${r.name}</div>
+        <div class="routine-card-meta">${exCount} ejercicio${exCount !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="routine-card-arrow">↗</div>
+    </div>`;
+  }).join('');
+}
+
+function deleteRoutine(e, id) {
+  e.stopPropagation();
+  if (!confirm('¿Eliminar esta rutina?')) return;
+  db.routines = db.routines.filter(r => r.id !== id);
+  save();
+  renderRoutines();
+}
+
+// ── RENDER: ROUTINE DETAIL ────────────────────────────────────────────
+function renderRoutineDetail() {
+  const routine = db.routines.find(r => r.id === currentRoutineId);
+  if (!routine) return;
+
+  document.getElementById('routineTitle').textContent = routine.name;
+
+  const list = document.getElementById('exercisesList');
+
+  if (!routine.exercises || !routine.exercises.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">💪</div>
+      <h3>Sin ejercicios</h3>
+      <p>Añade el primer ejercicio a esta rutina</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = routine.exercises.map(ex => {
+    const entries = ex.progress || [];
+    const maxWeight = entries.length ? Math.max(...entries.map(e => e.weight)) : null;
+    const lastEntry = entries.length ? entries[entries.length - 1] : null;
+    const summary = lastEntry ? `Último: ${lastEntry.weight}kg × ${lastEntry.reps} reps` : 'Sin registros';
+
+    const entriesHTML = entries.length ? [...entries].reverse().map((entry, i) => {
+      const isPR = entry.weight === maxWeight;
+      const origIndex = entries.length - 1 - i;
+      return `<div class="progress-entry">
+        <div>
+          <div class="progress-entry-date">${formatDate(entry.date)}</div>
+          ${entry.note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${entry.note}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${isPR ? '<span class="pr-badge">PR</span>' : ''}
+          <div>
+            <div class="progress-entry-weight">${entry.weight}kg</div>
+            <div class="progress-entry-reps">${entry.sets || '—'}x${entry.reps} reps</div>
+          </div>
+        </div>
+        <button class="delete-entry" onclick="deleteProgress('${ex.id}',${origIndex})">✕</button>
+      </div>`;
+    }).join('') : `<div class="empty-msg">Aún no hay registros de peso</div>`;
+
+    return `<div class="exercise-card" id="ex-${ex.id}">
+      <div class="exercise-header" onclick="toggleExercise('${ex.id}')">
+        <div>
+          <div class="exercise-name">${ex.name}</div>
+          <div class="exercise-summary">${summary}</div>
+        </div>
+        <div class="exercise-controls">
+          <button class="icon-btn danger" onclick="deleteExercise(event,'${ex.id}')" title="Eliminar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+          <span class="chevron">▾</span>
+        </div>
+      </div>
+      <div class="exercise-body">
+        <div class="progress-header">
+          <span class="progress-label">Historial de peso</span>
+          <button class="add-progress-btn" onclick="openProgressModal('${ex.id}')">+ Registrar</button>
+        </div>
+        <div class="progress-entries">${entriesHTML}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleExercise(id) {
+  document.getElementById('ex-' + id).classList.toggle('open');
+}
+
+function deleteExercise(e, id) {
+  e.stopPropagation();
+  if (!confirm('¿Eliminar ejercicio?')) return;
+  const routine = db.routines.find(r => r.id === currentRoutineId);
+  routine.exercises = routine.exercises.filter(ex => ex.id !== id);
+  save();
+  renderRoutineDetail();
+}
+
+function deleteProgress(exId, index) {
+  const routine = db.routines.find(r => r.id === currentRoutineId);
+  const ex = routine.exercises.find(e => e.id === exId);
+  ex.progress.splice(index, 1);
+  save();
+  // keep accordion open
+  const wasOpen = document.getElementById('ex-' + exId)?.classList.contains('open');
+  renderRoutineDetail();
+  if (wasOpen) document.getElementById('ex-' + exId)?.classList.add('open');
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────────────
+function addRoutine() {
+  const name = document.getElementById('routineNameInput').value.trim();
+  if (!name) return;
+  db.routines.push({ id: uid(), name, exercises: [] });
+  save();
+  closeModal('modalRoutine');
+  document.getElementById('routineNameInput').value = '';
+  renderRoutines();
+}
+
+function addExercise() {
+  const name = document.getElementById('exerciseNameInput').value.trim();
+  if (!name) return;
+  const routine = db.routines.find(r => r.id === currentRoutineId);
+  if (!routine.exercises) routine.exercises = [];
+  routine.exercises.push({ id: uid(), name, progress: [] });
+  save();
+  closeModal('modalExercise');
+  document.getElementById('exerciseNameInput').value = '';
+  renderRoutineDetail();
+}
+
+function openProgressModal(exId) {
+  currentExerciseId = exId;
+  openModal('modalProgress');
+}
+
+function addProgress() {
+  const weight = parseFloat(document.getElementById('progressWeightInput').value);
+  const reps = parseInt(document.getElementById('progressRepsInput').value);
+  const sets = parseInt(document.getElementById('progressSetsInput').value) || null;
+  const note = document.getElementById('progressNoteInput').value.trim();
+
+  if (!weight || !reps) { alert('Introduce peso y repeticiones'); return; }
+
+  const routine = db.routines.find(r => r.id === currentRoutineId);
+  const ex = routine.exercises.find(e => e.id === currentExerciseId);
+  ex.progress.push({ weight, reps, sets, note, date: new Date().toISOString() });
+  save();
+  closeModal('modalProgress');
+  document.getElementById('progressWeightInput').value = '';
+  document.getElementById('progressRepsInput').value = '';
+  document.getElementById('progressSetsInput').value = '';
+  document.getElementById('progressNoteInput').value = '';
+  const wasOpen = document.getElementById('ex-' + currentExerciseId)?.classList.contains('open');
+  renderRoutineDetail();
+  if (wasOpen) document.getElementById('ex-' + currentExerciseId)?.classList.add('open');
+}
+
+// ── MODAL HELPERS ──────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+  setTimeout(() => document.querySelector(`#${id} .form-input`)?.focus(), 100);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal(overlay.id);
+  });
+});
+
+// Enter to submit
+document.getElementById('routineNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') addRoutine(); });
+document.getElementById('exerciseNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') addExercise(); });
+
+// ── UTILS ──────────────────────────────────────────────────────────────
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────
+showView('routines');
+document.getElementById('fabBtn').onclick = () => openModal('modalRoutine');
+</script>
+</body>
+</html>
